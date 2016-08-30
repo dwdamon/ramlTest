@@ -1,0 +1,540 @@
+# %RAML 0.8
+title: OAuth API V3
+baseUri: https://api.covisintrnd.com/oauth/v3
+protocols: [HTTPS]
+securitySchemes:
+  - basic:
+      type: Basic Authentication 
+
+schemas: !include https://raw.githubusercontent.com/dwdamon/ramlTest/master/raml/common-schema.txt
+ 
+  - token: |
+      {
+        "id" : "http://api.covisint.com/schema/token",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing an OAuth access token issued to a subject via the OAuth grant.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/resource#"
+        },
+        "properties" : {
+          "access_token" : {
+            "type" : "string",
+            "description": "The access token string."
+          },
+          "refresh_token" : {
+            "type" : "string",
+            "description": "The refresh token string."
+          },
+          "expires_in" : {
+            "type" : "integer",
+            "description": "The access token lifetime, in seconds."
+          },
+          "scope" : {
+            "type": "string",
+            "description": "The scope of the access token. Multiple scopes are separated by spaces."
+          },
+          "state" : {
+            "type" : "string",
+            "description": "A client-generated, opaque value used to maintain state and/or trust between the client and authorization server."
+          },
+          "token_type" : {
+            "type" : "string",
+            "description": "The type of the token. Currently only Bearer tokens are supported."
+          }
+        },
+        "required" : [ "access_token", "refresh_token", "expires_in", "scope", "token_type" ]
+      }
+ 
+  - introspect: |
+      {
+        "id" : "http://api.covisint.com/schema/token",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing the token information response.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/resource#"
+        },
+        "properties" : {
+          "active" : {
+            "type" : "boolean",
+            "description": "Flag indicating whether the token is valid. If the token is invalid (false) then this is will be the only attribute in the response."
+          },
+          "scope" : {
+            "type": "string",
+            "description": "The scope of the access token. Multiple scopes will be separated by spaces."
+          },
+          "iat" : {
+            "type": "integer",
+            "description": "Timestamp, measured in seconds, indicating when the token was issued."
+          },
+          "exp" : {
+            "type": "integer",
+            "description": "Timestamp, measured in seconds, indicating when the token will expire."
+          },
+          "sub" : {
+            "type": "string",
+            "description": "The subject of the token. This will either represent a person or an application"
+          },
+          "user" : {
+            "type": "string",
+            "description": "The identifier for the user who authorized this token. This will correspond to the Person ID of the person for which the token is issued. This attribute will not be included for an application-level token obtained through the client credentials flow."
+          },
+          "client_id" : {
+            "type": "string",
+            "description": "The identifier for the client the token was issued to."
+          },
+          "grant_type" : {
+            "type": "string",
+            "description": "The grant_type used for generating this token.",
+            "enum": [ "authorization_code", "client_credentials", "password", "refresh_token" ]
+          },
+          "token_type" : {
+            "type" : "string",
+            "description": "The type of the token.",
+            "enum": [ "Bearer" ]
+          }
+        },
+        "required" : [ "active" ]
+      }
+ 
+  - oauthv2error: |
+      {
+        "id" : "http://api.covisint.com/schema/token",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing the token information response, as per RFC6749, Section 5.2",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/resource#"
+        },
+        "properties" : {
+          "error" : {
+            "type" : "string",
+            "description": "Error code.",
+            "enum": [ "invalid_client", "invalid_request", "invalid_grant", "unauthorized_client", "unsupported_grant_type", "unsupported_token_type" ]
+          },
+          "error_description" : {
+            "type": "string",
+            "description": "Additional information about the error."
+          }
+        },
+        "required" : [ "error" ]
+      }
+
+traits: !include https://raw.githubusercontent.com/dwdamon/ramlTest/master/raml/common-traits.txt
+  - secured:
+      usage: Apply this to any method that needs to be secured by a bearer token.
+      description: Requests requires authentication using a bearer token.
+      headers:
+        Authorization:
+          description: Access (bearer) token that is obtained from the /token endpoint of the oauth API.
+          pattern: ^Bearer .*$
+          example: Bearer ZCtYUGpYRXpET0JvVE1rZzlWV3I1Yk
+          required: true
+      responses:
+        401:
+          description: |
+            Authentication error. This is returned if the bearer token is not provided or is not valid.
+          body:
+            application/json:
+              schema: oauthv2error
+              example: |
+                {
+                  "error": "invalid_client"
+                }
+        403:
+          description: |
+            Authorization error. This is returned if the requestor is not authorized to make the request.
+          body:
+            application/json:
+              schema: oauthv2error
+              example: |
+                {
+                  "error": "unauthorized_client"
+                }
+
+/authorization:
+  description: Authorization endpoint [Since:3.0]
+  get:
+    description: |
+      Get an OAuth 2.0 authorization.  A successful call will result in a redirection to the authorization server in order to receive the resource owner's consent.  The redirection will be to the login page or directly to the consent page (if the user is already authenticated and login is not forced).  Once consent is granted then the authorization server will send the user agent to the redirect_uri with query parameters state, scope, and code.
+    queryParameters:
+      client_id:
+        description: The client identifier provided during client application onboarding.
+        example: Pl6FScdRhgpUbwyB60FYHebShl57Y8Tp
+        type: string
+        required: true
+      redirect_uri:
+        description: The location the user should be returned to after the user authorizes the access.  This must match the URI registered with the application.  Included query parameters will not be compared with the registered URI and will returned in any callbacks.
+        type: string
+        required: false
+      response_type:
+        description: |
+          Response type.  The allowed values are:
+            + __code__: Indicates that an authorization code is being requested
+            + __token__: Indicates that an implicit grant is being requested
+        type: string
+        example: code
+        enum: [ code, token ]
+        required: true
+      scope:
+        description: |
+          The space-delimited authorization scope(s) being requested.
+        type: string
+        required: true
+      state:
+        description: |
+          A unique value submitted by the client to store state information and/or prevent cross-site request forgery attacks.  The value should be a unique string that is kept secret in the client.  It will be returned with the authorization code to the redirect URI and should be verified by the client.
+        type: string
+        required: false
+      force_login:
+        description: |
+          Whether or not to force a login. If false then the redirection will
+          be to the consent page if a user is already authenticated with the
+          authorization server. [Since:2.1]
+        type: boolean
+        required: false
+        default: false
+
+    responses:
+      302:
+        description: |
+          Redirection to the authorization server for the resource owner's consent.
+      401:
+        description: |
+          Authentication error. This is returned if the client ID is not valid.
+        body:
+          application/json:
+            schema: oauthv2error
+            example: |
+              {
+                "error": "invalid_client"
+              }
+
+/userAuthorize:
+  securedBy: [basic]
+  post:
+    description: |
+      Internal endpoint to generate an auth code or an implicit token, depending on the grant type. [Since:3.0][Visibility:private]
+    headers:
+      Authorization:
+        description: Basic authorization, using the client id and client secret issued to the login app.  To use the API console switch the Security Scheme to Basic Authentication and enter the client id in the Username field and client secret in the Password field.  This will set the Authorization header properly.
+        pattern: ^Basic .*$
+        example: Basic aWQ6cGFzc3dvcmQ=
+        required: true
+    queryParameters:
+      client_id:
+        description: The client ID of the application requesting the authorization
+        type: string
+        example: 9yqp1t36GWcfDCfYwlNZSWHGzZr5MISy
+        required: true
+      user_id:
+        description: The user id (i.e., Person ID) of the logged in user.
+        type: string
+        example: PJ8L65 
+        required: true
+      realmId:
+        description: The realm of the logged in user.
+        type: string
+        example: API-DEV1
+        required: true
+      redirect_uri:
+        description: The location the user should be returned to after the user authorizes the access.
+        type: string
+        required: false
+      response_type:
+        description: |
+          Response type.  The allowed values are:
+            + __code__: Indicates that an authorization code is being requested
+            + __token__: Indicates that an implicit grant is being requested
+        type: string
+        example: code
+        enum: [ code, token ]
+      scope:
+        description: |
+          The space-delimited authorization scope(s) being requested.
+        type: string
+        required: false
+      state:
+        description: |
+          A unique value submitted by the client to store state information and/or prevent cross-site request forgery attacks.  The value should be a unique string that is kept secret in the client.  It will be returned with the authorization code to the redirect URI and should be verified by the client.
+        type: string
+        required: true
+    responses:
+      200:
+        description: |
+          In case the "response_type" is "token", successfully created and
+          returned the implicit access token.  This token is used in Bearer-type
+          Authorization header for authentication to all other API calls.
+        body:
+          application/json:
+            schema: token
+            example: |
+              {
+                "access_token": "1/Ty5O27GtaDqeQBNTYy4NnIYlbKDF",
+                "refresh_token": "1/kj5ihkwzGxoz4tQQGyFHeyKdgE1ZrPXe",
+                "expires_in": 900,
+                "scope": "email",
+                "token_type": "bearer"
+              }
+      302:
+        description: |
+          In case the "response_type" is "code", redirect to the provided "redirect_uri" with the following query parameters added:
+            + __code__: The authorization code
+            + __state__: If the "state" parameter was present in the /authorization request, the exact value sent by the client.
+      401:
+        description: |
+          Authentication error. This is returned if the client ID and secret are not valid.
+        body:
+          application/json:
+            schema: oauthv2error
+            example: |
+              {
+                "error": "invalid_client"
+              }
+/token:
+  description: Collection endpoint for token resources. [Since:3.0]
+  get:
+    is: [secured]
+    description: |
+      Search for refresh tokens associated to a user/person. A user ID/person ID is required. The response is an array of refresh tokens. The user_id and client_id query params are passed as search keys. It would return an array of one refresh token for a possible user_id and client_id combination. If only user_id is passed as an query param, then, all refresh tokens for the particular user are returned.[Since:2.1]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/json
+        type: string
+        required: false
+    queryParameters:
+      user_id: 
+        description: The user id (Person ID) of the user (person) to use in the search.  Only refresh tokens for the given user (person) will be returned.  
+        type: string
+        required: true
+      client_id: 
+        description: The client_id to find. 
+        type: string
+        required: false
+      token_type:
+        description: type of the token to be searched.  The currently supported value is refresh_token.
+        type: string
+        required: true
+        enum: [ refresh_token ]
+    responses:
+      200:
+        description: |
+          Successfully returned a collection of refresh token for a user_id and client_id.
+        body:
+          application/json:
+            schema: token
+            example: |
+              [{
+                "refresh_token": "2|F5GetywXY4yPYOgPVdJtCyTYIXh1H9Vc",
+                "refresh_token_status": "approved",
+                "refresh_token_issued_at": 1438264065268,
+                "refresh_token_expires_in": 15551995,
+                "user": "JL7M4G67",
+                "client_id": "r7KCo6Rb2rXzDHYGaxvkvIi1tkAryk3Mc",
+                "realm": "S-APIS-ONE",
+                "scope": "email"
+                }]
+      400:
+        description: |
+          Bad request. 
+        body:
+          application/json:
+            schema: oauthv2error
+            example: |
+              {
+                "error": "unsupported_token_type",
+                "error_description": "Token type must be refresh_token."
+              }
+  post:
+    securedBy:
+      - basic
+    description: |
+      Create or refresh access token. The generated token can be used for bearer-type authentication in other API calls.  The client id and client secret are passed in a basic Authorization header (username=client id and password=client secret). The grant type must always be passed as a paramter.  The other parameters that need to be passed are dictated by the grant type:
+        +  **authorization_code**: grant_type, redirect_uri, code
+        +  **password**: grant_type, scope, username or user_id, password
+        +  **client_credentials**: grant_type, scope
+        +  **refresh_token**: refresh_token, scope
+ 
+    headers:
+      Authorization:
+        description: Basic authorization, using the client id and client secret issued during client provisioning.  To use the API console switch the Security Scheme to Basic Authentication and enter the client id in the Username field and client secret in the Password field.  This will set the Authorization header properly.
+        pattern: ^Basic .*$
+        example: Basic aWQ6cGFzc3dvcmQ=
+        required: true    
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          grant_type:
+            description: |
+              The grant type.  Must be one of "authorization_code", "client_credentials", "refresh_token" or "password".
+            type: string
+            required: true
+            #enum: [ authorization_code, client_credentials, refresh_token, password ]
+            example: client_credentials
+          username:
+            description: |
+              The username of the resource owner (user).  This is the ID that the user uses to log in.  Either username or user_id is required when *grant_type* is "password". (An error will occur if both are supplied.) This is used in conjunction with password parameter to validate the resource owner's credentials. Will be ignored for any other grant type.
+            type: string
+            required: false
+          user_id:
+            description: |
+              The person ID of the resource owner (user).  This is the unique identifier the system assigns to the user and is not the same as username--which is the ID that the user uses to log in.  Either user_id or username is required when *grant_type* is "password".  (An error will occur if both are supplied.) This is used in conjunction with password parameter to validate the resource owner's credentials. Will be ignored for any other grant type.
+            type: string
+            required: false
+          password:
+            description: |
+              The resource owner password.  Required when *grant_type* is "password". This is used in conjunction with the username (or user_id) parameter to validate the resource owner's credentials. Will be ignored for any other grant type.
+            type: string
+            required: false
+          code:
+            description: |
+              The authorization code that was issued by the authorization server as a result of a GET /authorization request.  Required when *grant_type* is "authorization_code". Will be ignored for any other grant type.
+            type: string
+            required: false
+          redirect_uri:
+            description: |
+              The redirect URI.  Required when *grant_type* is "authorization_code". This is verified against the redirect URI used when obtaining the authorization code.  Will be ignored for any other grant type.
+            type: string
+            required: false
+          scope:
+            description: |
+              The space-delimited authorization scope(s) being requested.  This is applicable when *grant_type* is "client_credentials", "password", or "refresh_token". Will be ignored for any other grant type.     
+              Note--For the authorization code grant type the scope is dictated by the scope value in the /authorization call.     
+              Note--For refresh_token, the scope list must not include a scope not originally granted by the resource owner.
+            type: string
+            required: false
+          refresh_token:
+            description: |
+              The refresh token returned by a previous "authorization_code", "client_credentials" or "password" call.  Required when *grant_type* is "refresh_token".  Will be ignored for any other grant type.
+            type: string
+            required: false
+    responses:
+      200:
+        description: |
+          Successfully created and returned token. This token is used in a Bearer-type Authorization header for authentication to all other API calls.
+        body:
+          application/json:
+            schema: token
+            example: |
+              {
+                "access_token": "1/Ty5O27GtaDqeQBNTYy4NnIYlbKDF",
+                "refresh_token": "1/kj5ihkwzGxoz4tQQGyFHeyKdgE1ZrPXe",
+                "expires_in": 900,
+                "scope": "email",
+                "token_type": "Bearer"
+              }
+      400:
+        description: |
+          Bad request. This is returned if there is an issue with the request that does not involve client authentication.  The error response format is defined in [RFC6749, Section 5.2](https://tools.ietf.org/html/rfc6749#section-5.2).
+        body:
+          application/json:
+            schema: oauthv2error
+            example: |
+              {
+                "error": "unsupported_grant_type",
+                "error_description": "Grant type must be one of: authorization_code, client_credentials, refresh_token or password.
+              }
+      401:
+        description: |
+          Invalid client authentication. This is returned if the client ID/client secret combination used in the Basic Authentication header is not valid.  The error response format is defined in [RFC6749, Section 5.2](https://tools.ietf.org/html/rfc6749#section-5.2).
+        body:
+          application/json:
+            schema: oauthv2error
+            example: |
+              {
+                "error": "invalid_request",
+                "error_description": "Invalid request credentials"
+              }
+
+/revoke:
+  is: [secured]
+  description: Endpoint for token revocation operation. [Since:3.0][Entitlement:revoke-token]
+  post:
+    description: |
+      Revoke an access or refresh token. This endpoint accepts a token in the body.
+        + If access token is passed, only access token will be revoked and refresh token will continue to exist and will be valid
+        + If refresh token is passed, both access token and refresh token will be revoked 
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          token:
+            description: Access or refresh token to revoke
+            type: string
+            required: true
+          token_type_hint:
+            description: |
+              A hint about the type of token being submitted for revocation. This may improve the performance of the server and is not required to be provided or correct.
+            type: string
+            required: false
+            enum: [ access_token, refresh_token ]
+            example: access_token
+          cascade:
+            description: Whether or not to cascade the revocation to the associated access or refresh token.  If the passed token is an access token, then this indicates whether all access tokens associated with the refresh token should also be revoked.  If the passed token is a refresh token, then this indicates whether the refresh token associated with the access token (if it exists) should also be revoked.
+            type: boolean
+            required: true
+    responses:
+      200:
+        description: Successfully ensured that the token is not valid.  This may be a result of a successfully revoked token or the submitted token was not valid.
+
+/introspect:
+  is: [secured]
+  securedBy: [basic]
+  description: Endpoint for token information operations. [Since:3.0][Entitlement:introspect-token]
+  post:
+    description: Returns whether or not an access or refresh token is active.  If it is active then additional information about the token is also provided. 
+    headers:
+      Accept:
+        description: Media type.
+        example: application/json
+        type: string
+        required: false
+    body:
+      application/x-www-form-urlencoded:
+        formParameters:
+          token:
+            description: Access or refresh token for introspection.
+            type: string
+            required: true
+          token_type_hint:
+            description: |
+              A hint about the type of token being submitted for introspection. This may improve the performance of the server and is not required to be provided or correct.
+            type: string
+            required: false
+            enum: [ access_token, refresh_token ]
+            example: access_token
+    responses:
+      200:
+          description: Successfully processed request.  The response contains whether the token is active or not.  If active, additional information about the token is also returned. 
+          body:
+            application/json:
+              schema: introspect
+              example: |
+                If the token type is access_token and  is active,
+                {
+                  "active": "true",
+                  "scope": "email",
+                  "iat": 1427954154425,
+                  "exp": 1427966158455,
+                  "sub": "{person}Y6U9JL4",
+                  "user": "Y6U9JL4",
+                  "client_id": "GbvgMuQTF8Hw1lgFNGFPiaTOrA3H",
+                  "grant_type": "authorization_code",
+                  "token_type": "Bearer"
+                }
+                If the token type is refresh_token and  is active,
+                {
+                  "refresh_token": "2|GbvgMuQTF8Hw1lgFNGFPiaTOrA3H",
+                  "refresh_token_status": "approved",
+                  "refresh_token_issued_at": 1436424622720,
+                  "refresh_token_expires_in": 0,
+                  "user": "COVS_ADMIN",
+                  "client_id": "GbvgMuQTF8Hw1lgFNGFPiaTOrA3H",
+                  "realm": "COVSINT",
+                  "scope": "all"
+                }
+                If the token is invalid or inactive:
+                {
+                  "active": "false"
+                }

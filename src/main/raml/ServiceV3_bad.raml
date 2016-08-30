@@ -1,0 +1,3018 @@
+#%RAML 0.8
+title: Service API
+baseUri: https://api.covisintlabs.com/service/v3
+protocols: [HTTPS]
+
+#schemas: !include common-schema.txt
+schemas: !include https://raw.githubusercontent.com/dwdamon/ramlTest/master/raml/common-schema.txt
+
+  - service: |
+      {
+        "id" : "http://api.covisint.com/schema/service",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a service resource.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "id" : {
+            "maxLength" : 15
+          },
+          "version": {
+            "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but is ignore for POST requests. User supplied value will be ignored and will be set to the creation value."
+          },
+          "name" : {
+            "description": "Internationalized service names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "description" : {
+            "description": "Internationalized service descriptions. The description will be defaulted to the service name, if it is not provided for a language for which the service name is given.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "parentService": {
+            "description": "The parent service.  Used to create a service hierarchy.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "category" : {
+            "description": "Internationalized category names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "owningOrganization": {
+            "description": "The organization that owns this service.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "urls": {
+            "type": "array",
+            "minItems": 1,
+            "description": "A listing of all URLs defined for this service, by type.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "description": "The URL type.", "maxLength": 100 },
+                "value": { "type": "string", "description": "The URL value.", "maxLength": 4000 }
+              }
+            }
+          },
+          "remoteAppId": {
+            "type": "string",
+            "description": "Links this service to a remote application known to the client.",
+            "maxLength": 500
+          },
+          "mobileServiceId": {
+            "type": "string",
+            "description": "Mobile service id.",
+            "maxLength": 200
+          },
+          "federationConnectionWizard": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Location of the federation connection set-up wizard.  e.g. salesforce, unauthenticated website, etc."
+          },
+          "protected": {
+            "type": "boolean",
+            "description": "Indicates whether this service is synced back to cleartrust entitlements server, and therefore protected by the ct web agent."
+          },
+          "messagingEnabled": {
+            "type": "boolean",
+            "description": "Indicates whether to perform messaging when this service is updated."
+          },
+          "mangledUrl": {
+            "type": "string",
+            "description": " The mangled/federated url of the service."
+          },
+          "iconUrl": {
+            "type": "string",
+            "description": " The icon url of the service."
+          }
+        }
+        , "required":[ "name", "description", "category", "owningOrganization", "urls" ]
+      }
+
+  - packageGrant: |
+      {
+        "id" : "http://api.covisint.com/schema/packageGrant",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Representation of a package grant.",
+        "extends" : {
+          "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "id": {
+            "description" : "id"
+          },
+          "version": {
+            "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "active", "suspended", "unactivated" ],
+            "description" : "The status of the grant.  Only required when grant is retrieved.  Not required when grant is created."
+          },
+          "grantee": {
+            "description": "The subject owning the grant",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "servicePackage": {
+            "description": "The granted package.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "requestId": {
+            "type": "string",
+            "description": " The request id will be returned in the response in case of granting N phase enabled package."
+          },
+          "servicePackageResource": {
+            "description": "The password account associated with the person.",
+            "type" : "object",
+            "properties" : {
+              "id" : {
+                "type" : "string",
+                "maxLength" : 100,
+                "description" : "The unique identifier for this resource."
+              },
+              "version": {
+                "type" : "string",
+                "description" : "The current version for this resource. Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests."
+              },
+              "creator" : {
+                "type" : "string",
+                "maxLength" : 64,
+                "description" : "The creator of this resource.  This read-only field is ignored by the server, and is overlayed with the value supplied in the x-requestor header.",
+                "readonly": true
+              },
+              "creatorAppId" : {
+                "type" : "string",
+                "maxLength" : 64,
+                "description" : "The id of the application used to create this resource.  This read-only field is ignored by the server, and is overlayed with the value supplied in the x-requestor-app header.",
+                "readonly": true
+              },
+              "creation" : {
+                "type" : "number",
+                "minimum" : 0,
+                "maximum" : 9223372036854775807,
+                "description" : "This read only property is ignored by the server and the system will overlay with the time, in milliseconds since the epoch, when this resource was created.",
+                "readonly": true
+              },
+              "realm" : {
+                "type" : "string",
+                "maxLength" : 25,
+                "pattern" : "^[A-Za-z0-9]{2,25}$",
+                "description" : "The realm in which this resource is being created. This is mandatory if x-realm header is NOT available"
+              },
+              "owningOrganization": {
+                "description": "The organization that owns this package.",
+                "$ref": "http://api.covisint.com/schema/resourceReference#"
+              },
+              "parent": {
+                "description": "The parent package.  Used to create a package hierarchy.",
+                "$ref": "http://api.covisint.com/schema/resourceReference#"
+              },
+              "codeRestrictions": {
+                "type": "object",
+                "description": "Indicates whether site/location code(s) must be specified when requesting/granting this package.",
+                "properties": {
+                  "requestorType": {
+                    "type": "string",
+                    "enum": [ "person", "organization" ]
+                  },
+                  "restriction": {
+                    "type": "string",
+                    "enum": [ "site", "location" ]
+                  }
+                }
+                , "required": [ "requestorType", "restriction" ]
+              },
+              "termsAndConditions": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [ "person", "organization" ],
+                      "description": "The target entity of the terms and conditions."
+                    },
+                    "tacId": {
+                      "type": "string",
+                      "description": "The identifier of the T&C record.",
+                      "maxLength": 15
+                    }
+                  }
+                  , "required": [ "tacId" ]
+                }
+              },
+              "protected": {
+                "type": "boolean",
+                "description": "Indicates whether this package is synced back to cleartrust entitlements server, and therefore protected by the ct web agent.",
+                "default" : false
+              },
+              "requestable": {
+                "type": "boolean",
+                "description": "Indicates whether this package may be requested by persons or organizations.",
+                "default" : false
+              },
+              "grantable": {
+                "type": "boolean",
+                "description": "Indicates whether this package may be granted to persons or organizations.",
+                "default" : true
+              },
+              "displayable": {
+                "type": "boolean",
+                "description": "Indicates whether this package may be displayed or should be suppressed in UIs.",
+                "default" : true
+              },
+              "requestReasonRequired": {
+                "type": "boolean",
+                "description": "Indicates whether package requests must be accompanied by a reason supplied by the requestor.",
+                "default" : false
+              },
+              "name" : {
+                "description": "Internationalized package names.",
+                "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+              },
+              "description" : {
+                "description": "Internationalized package descriptions.",
+                "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+              },
+              "category" : {
+                "description": "Internationalized category names.",
+                "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+              },
+              "requiredApprovals" : {
+                "type" : "array",
+                "description": "List of approval actors required to make decisions on package requests before it can be granted. Defaults to organizationAdmin if no values are provided.",
+                "minItems": 0,
+                "items": {
+                  "enum" : [ "organizationAdmin", "applicationAdmin", "provisioningAdmin" ]
+                },
+                "default" : "organizationAdmin"
+              }
+            }
+            , "required": [ "id", "creator", "creatorAppId", "creation", "owningOrganization", "name", "category" ]
+          }
+        }
+        , "required": [ "grantee", "servicePackage" ]
+      }
+
+  - packageGrantHistory: |
+      {
+        "id" : "http://api.covisint.com/schema/packageGrantHistory",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "array",
+        "description" : "Representation of a package grant.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "id": {
+          },
+          "version": {
+            "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "active", "suspended", "unactivated" ],
+            "description" : "The status of the grant.  Only required when grant is retrieved.  Not required when grant is created."
+          },
+          "servicePackage": {
+            "description": "The granted package.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "eventDate": {
+            "type": "integer",
+            "description": "The event date."
+          },
+          "eventType": {
+            "type": "integer",
+            "description": "The event type."
+          }
+        }
+      }
+
+  - packageRequest: |
+      {
+        "id" : "http://api.covisint.com/schema/packageRequest",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a package request resource.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "id": {
+             "maxLength" : 15
+          },
+          "version": {
+            "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+          },
+          "requestor": {
+            "description": "The subject for which this request is being made",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "servicePackage": {
+            "description": "The package being requested.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "reason": {
+            "type": "string",
+            "description": "The justification for the request.",
+            "maxLength": 1000
+          },
+          "prerequisite": {
+            "description": "The parent request, if applicable.",
+            "extends": {
+              "$ref": "http://api.covisint.com/schema/resourceReference#"
+            }
+          },
+          "phase": {
+            "type": "string",
+            "enum": [ "Pending Security admin approval", "Pending Application admin approval" ]
+          },
+          "packageClaims":{
+            "type": "array",
+            "description": "The array of package claims.",
+            "$ref" : "http://api.covisint.com/schema/packageClaim#"
+          }
+        }
+        , "required":[ "requestor", "servicePackage" ]
+      }
+
+  - package: |
+      {
+        "id" : "http://api.covisint.com/schema/package",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a package resource.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "id": {
+           "maxLength" : 100
+          },
+          "version": {
+            "description" : "The current version for this resource.  Exists once the resource has been saved. This is mandatory for PUT requests, but should not be supplied for POST requests. User supplied value will be ignored and will be set to the creation value."
+          },
+          "owningOrganization": {
+            "description": "The organization that owns this package.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "parent": {
+            "description": "The parent package.  Used to create a package hierarchy.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "codeRestrictions": {
+             "type": "object",
+             "description": "Indicates whether site/location code(s) must be specified when requesting/granting this package.",
+             "properties": {
+               "requestorType": {
+                 "type": "string",
+                 "enum": [ "person", "organization" ]
+               },
+               "restriction": {
+                 "type": "string",
+                 "enum": [ "site", "location" ]
+               }
+             }
+             , "required": [ "requestorType", "restriction" ]
+          },
+          "termsAndConditions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+            "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": [ "person", "organization" ],
+                  "description": "The target entity of the terms and conditions."
+                },
+                "tacId": {
+                  "type": "string",
+                  "description": "The identifier of the T&C record.",
+                  "maxLength": 15
+                }
+              }
+             , "required": [ "tacId" ]
+            }
+          },
+          "protected": {
+            "type": "boolean",
+            "description": "Indicates whether this package is synced back to cleartrust entitlements server, and therefore protected by the ct web agent.",
+            "default" : false
+          },
+          "requestable": {
+            "type": "boolean",
+            "description": "Indicates whether this package may be requested by persons or organizations.",
+            "default" : false
+          },
+          "grantable": {
+            "type": "boolean",
+            "description": "Indicates whether this package may be granted to persons or organizations.",
+            "default" : true
+          },
+          "displayable": {
+            "type": "boolean",
+            "description": "Indicates whether this package may be displayed or should be suppressed in UIs.",
+            "default" : true
+          },
+          "requestReasonRequired": {
+            "type": "boolean",
+            "description": "Indicates whether package requests must be accompanied by a reason supplied by the requestor.",
+            "default" : false
+          },
+          "name" : {
+            "description": "Internationalized package names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "description" : {
+            "description": "Internationalized package descriptions.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "category" : {
+            "description": "Internationalized category names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "parentService": {
+            "description": "The parent service.  Used to create a service hierarchy.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "requiredApprovals" : {
+            "type" : "array",
+            "description": "List of approval actors required to make decisions on package requests before it can be granted. Defaults to organizationAdmin if no values are provided.",
+            "minItems": 0,
+            "items": {
+              "enum" : [ "organizationAdmin", "applicationAdmin", "provisioningAdmin" ]
+            },
+            "default" : "organizationAdmin"
+          },
+          "personTacEnabled" : {
+            "type" : "boolean",
+            "description" : "Flag to notify the package's terms and condition pertinent to person is enabled, read only",
+            "default" : "false"
+          },
+          "organizationTacEnabled" : {
+            "type" : "boolean",
+            "description" : "Flag to notify the package's terms and condition pertinent to person is organization",
+            "default" : "false"
+          }
+        }
+        , "required": [ "owningOrganization", "name", "category" ]
+      }
+
+  - packageClaim: |
+      {
+        "id" : "http://api.covisint.com/schema/packageClaim",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Representation of a package claim.",
+        "properties" : {
+          "id": {
+            "type": "string",
+            "description": "The id of the package claim."
+          },
+          "claimId": {
+            "type": "string",
+            "description": "The user given id of the package claim."
+          },
+          "name":{
+            "description": "Internationalized package claim names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "description":{
+            "description": "Internationalized package claim descriptions.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "claimValues":{
+            "type": "array",
+            "description": "The array of claim values.",
+            "minItems": 1,
+            "$ref" : "http://api.covisint.com/schema/packageClaimValue#"
+          }
+        }
+        , "required": [ "claimId", "description", "claimValues" ]
+      }
+
+  - packageClaimValue: |
+      {
+        "id" : "http://api.covisint.com/schema/packageClaimValue",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Representation of a package claim value.",
+        "properties":{
+          "id": {
+            "type": "string",
+            "description": "The id of the package claim value."
+          },
+          "claimValueId": {
+            "type": "string",
+            "description": "The user given id of the package claim value."
+          },
+          "name":{
+            "description": "Internationalized package claim value names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "description":{
+            "description": "Internationalized package claim value descriptions.",
+           "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          }
+        }
+        , "required": [ "claimValueId", "name", "description" ]
+      }
+
+  - packageClaimRequest: |
+      {
+        "id" : "http://api.covisint.com/schema/packageClaimRequest",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Representation of a package claim request.",
+        "properties" : {
+          "claimId": {
+            "type": "string",
+            "description": "The user given id of the package claim."
+          },
+          "claimValues":{
+             "type": "array",
+             "description": "The array of claim value unique identifiers.",
+             "minItems": 1,
+             "items": {
+               "type": "object",
+               "properties": {
+                 "claimValueId": {
+                   "type": "string",
+                   "description": "The user given id of the package claim value."
+                }
+              }
+              , "required": [ "claimValueId" ]
+            }
+          }
+        }
+        , "required": [ "claimId" ]
+      }
+
+  - grantStatusChangeRequest: |
+      {
+        "id" : "http://api.covisint.com/schema/grantStatusChangeRequest",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "type" : "object",
+        "description" : "Representation of a suspend/unsuspend package grant for user.",
+        "properties" : {
+          "grantee": {
+            "description": " The user id of grantee",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "servicePackage": {
+            "description": "The granted package.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "justification":{
+            "type": "string",
+            "description": "The justification reason."
+          }
+        }
+        , "required": [ "grantee", "servicePackage", "justification" ]
+      }
+
+  - packageGrantClaimRequest: |
+      {
+        "id" : "http://api.covisint.com/schema/packageGrantRequest",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "type" : "object",
+        "description" : "Representation of a package grant claim request.",
+        "properties" : {
+          "grantee": {
+            "description": "The subject owning the grant claim",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "servicePackage": {
+            "description": "The granted package.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "packageClaims":{
+            "type": "array",
+            "description": "The array of package claim requests.",
+            "$ref" : "http://api.covisint.com/schema/packageClaimRequest#"
+          }
+        }
+        , "required": [ "grantee", "servicePackage", "packageClaims" ]
+      }
+
+  - packageGrantClaimResponse: |
+      {
+        "id" : "http://api.covisint.com/schema/packageGrantRequest",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "type" : "object",
+        "description" : "Representation of a package grant.",
+        "properties" : {
+          "grantee": {
+            "description": "The subject owning the grant",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "servicePackage": {
+            "description": "The granted package.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "packageClaims":{
+            "type": "array",
+            "description": "The array of package claims.",
+            "$ref" : "http://api.covisint.com/schema/packageClaim#"
+          }
+        }
+        , "required": [ "grantee", "servicePackage" ]
+      }
+
+  - minimalApplication: |
+      {
+        "id" : "http://api.covisint.com/schema/minimalApplication",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a minimal application resource.",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "maxLength" : 15,
+            "description" : "The unique identifier for this resource."
+          },
+          "name" : {
+            "description": "Internationalized service names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "packageId": {
+            "type": "string",
+            "description": "The package id in which the app belongs to.",
+            "maxLength": 100
+          }
+        },
+        "required" : [ "id", "name" ]
+      }
+
+  - applicationGrant: |
+      {
+        "id" : "http://api.covisint.com/schema/applicationGrant",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a application grant resource.",
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "enum" : [ "active", "suspended", "unactivated" ],
+            "description" : "The status of the grant."
+          },
+          "grantee" : {
+            "type" : "string",
+            "description" : "The id of the grantee."
+          },
+          "instant" : {
+            "type" : "number",
+            "minimum" : 0,
+            "maximum" : 9223372036854775807,
+            "description" : "The granted instant, in milliseconds since the epoch, when this resource was created."
+          }
+        }
+      }
+
+  - application: |
+      {
+        "id" : "http://api.covisint.com/schema/application",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a application resource.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "id" : {
+            "maxLength" : 15
+          },
+          "version": {
+            "description" : "The current version for this resource. "
+          },
+          "name" : {
+            "description": "Internationalized service names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "description" : {
+            "description": "Internationalized service descriptions. The description will be defaulted to the service name, if it is not provided for a language for which the service name is given.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "parentService": {
+            "description": "The parent service.  Used to create a service hierarchy.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "category" : {
+            "description": "Internationalized category names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "owningOrganization": {
+            "description": "The organization that owns this service.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "urls": {
+            "type": "array",
+            "minItems": 1,
+            "description": "A listing of all URLs defined for this service, by type.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": { "type": "string", "description": "The URL type.", "maxLength": 100 },
+                "value": { "type": "string", "description": "The URL value.", "maxLength": 4000 }
+              }
+            }
+          },
+          "remoteAppId": {
+            "type": "string",
+            "description": "Links this service to a remote application known to the client.",
+            "maxLength": 500
+          },
+          "mobileServiceId": {
+            "type": "string",
+            "description": "Mobile service id.",
+            "maxLength": 200
+          },
+          "federationConnectionWizard": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "Location of the federation connection set-up wizard.  e.g. salesforce, unauthenticated website, etc."
+          },
+          "protected": {
+            "type": "boolean",
+            "description": "Indicates whether this service is synced back to cleartrust entitlements server, and therefore protected by the ct web agent."
+          },
+          "messagingEnabled": {
+            "type": "boolean",
+            "description": "Indicates whether to perform messaging when this service is updated."
+          },
+          "mangledUrl": {
+            "type": "string",
+            "description": " The mangled/federated url of the service."
+          },
+          "iconUrl": {
+            "type": "string",
+            "description": " The icon url of the service."
+          },
+          "servicePackage": {
+            "description": "The package this service belongs to.",
+            "$ref": "http://api.covisint.com/schema/package#"
+          },
+          "bundledApps":{
+            "type": "array",
+            "description": "The array of bundled applications. Bundled applications are apps that are present in the app's package.",
+            "$ref" : "http://api.covisint.com/schema/minimalApplication#"
+          },
+          "relatedApps":{
+            "type": "array",
+            "description": "The array of related applications. Related applications are apps that are present in the parent or sub packages and if they are fast reg enabled.",
+            "$ref" : "http://api.covisint.com/schema/minimalApplication#"
+          },
+          "grant": {
+            "description": "The details of the grant.",
+            "$ref": "http://api.covisint.com/schema/applicationGrant#"
+          }
+        },
+        "required" : [ "name", "category", "owningOrganization", "urls", "servicePackage" ]
+      }
+
+  - categoryType: |
+      {
+        "id" : "http://api.covisint.com/schema/categoryType",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a category type resource.",
+        "properties" : {
+          "id" : {
+            "type": "string",
+            "description": "The id of the category type."
+          },
+          "defaultName" : {
+            "type": "string",
+            "description": "The default name of the category type."
+          },
+          "name" : {
+            "description": "Internationalized service names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          }
+        },
+        "required" : [ "id", "name" ]
+      }
+
+  - category: |
+      {
+        "id" : "http://api.covisint.com/schema/category",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a category resource.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "name" : {
+            "description": "Internationalized service names.",
+            "$ref" : "http://api.covisint.com/idm/schema/internationalString#"
+          },
+          "type": {
+            "description": "The type to which the category belongs to.",
+            "$ref": "http://api.covisint.com/schema/categoryType#"
+          }
+        },
+        "required" : [ "name" ]
+      }
+
+
+  - termsAndCondition: |
+      {
+        "id" : "http://api.covisint.com/schema/tac",
+        "$schema" : "http://json-schema.org/draft-04/schema",
+        "type" : "object",
+        "description" : "Schema representing a terms and condition resource.",
+        "extends" : {
+              "$ref" : "http://api.covisint.com/schema/realmScopedResourceV2#"
+        },
+        "properties" : {
+          "isLatest" : {
+            "type" : "boolean",
+            "description": "The flag to notify the package's terms and condition is latest."
+          },
+          "isReAcceptanceRequired" : {
+            "type" : "boolean",
+            "description": "The flag to notify the package's terms and condition is re-acceptance required."
+          },
+          "tacText" : {
+            "type" : "string",
+            "description": "The Text of the package's terms and condition."
+          },
+          "type" : {
+            "type" : "string",
+            "description": "The type of the package's terms and condition."
+          },
+          "language" : {
+            "type" : "string",
+            "description": "The language of the package's terms and condition."
+          },
+          "preTermsAndCondition" : {
+            "description": "The parent terms and condition.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          },
+          "servicePackage" : {
+            "description": "The package of the terms and condition which belong to.",
+            "$ref": "http://api.covisint.com/schema/resourceReference#"
+          }
+        }
+        , "required": [ "tacText", "language" ]
+      }
+
+#traits: !include common-traits.txt
+traits: !include https://raw.githubusercontent.com/dwdamon/ramlTest/master/raml/common-traits.txt
+
+/services:
+  is: [secured]
+  description: collection endpoint for service resources.
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Performs a search for service resources.[Since:1.0][Entitlement:service-search-services]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.service.v1+json
+        type: string
+        required: true
+    queryParameters:
+      id:
+        description: Filter the search results by the given id. Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      name:
+        description: Retrieve only services with the specified name.  The search is case-insensitive and is performed across all available languages.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      description:
+        description: Retrieve only services with the specified description.  The search is case-insensitive and is performed across all available languages.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      category:
+        description: Retrieve only services assigned to a specific category.  The search is case-insensitive and is performed across all available languages.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      parentService.id:
+        description: Retrieve services that are children of the given parent service id.  Multiple parameters are supported in which case retrieval of children services of all specified parent services will be performed.  Note that this only includes immediate children, and not grandchildren or deeper.
+        type: string
+        required: false
+      owningOrganization.id:
+        description: Retrieve services that are owned by the given organization id.  Multiple parameters are supported to allow retrieving services of multiple organizations at one time.
+        type: string
+        required: false
+      remoteAppId:
+        description: Filter the search results by the given remote application id.
+        type: string
+        required: false
+      mobileServiceId:
+        description: Filter the search results by given mobile service id.
+        type: string
+        required: false
+      sortBy:
+        description: Sort the search results.  Currently creation is the only sortable property.
+        type: string
+        required: false
+        enum: [ "+creation", "-creation" ]
+    responses:
+      200:
+        description: All services that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.service.v1+json:
+            schema: service
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          + search.services.request.invalid.combination.queryParamaters - Multiple {queryParameter} are not allowed.
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is: [postResponse]
+    description: Creates a new service.[Since:1.0][Entitlement:service-create-service]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.service.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.service.v1+json:
+        schema: service
+    responses:
+      201:
+        description: The service was successfully created
+        body:
+          application/vnd.com.covisint.platform.service.v1+json:
+            schema: service
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + framework:resource:missing - The following resources were not found: {resources}
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /{id}:
+    uriParameters:
+      id:
+        description: Unique identifier of the service.
+        type: string
+        required: true
+    is: [secured]
+    description: individual resource endpoint for service resources.
+
+    get:
+      is: [getResponse]
+      description: Returns the service by its unique id.[Since:1.0][Entitlement:service-get-service]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.service.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The service was successfully retrieved.
+          body:
+            application/vnd.com.covisint.platform.service.v1+json:
+              schema: service
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+/packages:
+  is: [secured]
+  description: collection endpoint for package resources
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Performs a search for packages. [Since:1.0][Entitlement:service-search-packages]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+    queryParameters:
+      id:
+        description: Filter the search results by the given id. Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      name:
+        description: Retrieve only packages with the specified name.  The search is case-insensitive and looks at all available languages.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      description:
+        description: Retrieve only packages with the specified description.  The search is case-insensitive and looks at all available languages.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      category:
+        description: Retrieve only packages assigned to the given category.  The search is case-insensitve.  Multiple parameters are supported and the search results will be a union.
+        type: string
+        required: false
+      parentService.id:
+        description: Retrieve services that are children of the given parent service id.  Multiple parameters are supported in which case retrieval of children services of all specified parent services will be performed.  Note that this only includes immediate children, and not grandchildren or deeper.
+        type: string
+        required: false
+      owningOrganization.id:
+        description: Return all packages owned by the given organization id.  Multiple parameters are supported, which will return packages that are owned by any of the given organizations.
+        type: string
+        required: false
+      parentPackage.id:
+        description: Return all children packages of the given parent package.  Multiple parameters are supported, which will return child packages of all given parent packages.
+        type: string
+        required: false
+      grantable:
+        description: Return all packages that are flagged as grantable.
+        type: boolean
+        required: false
+      requestable:
+        description: Return all packages that are flagged as requestable.
+        type: boolean
+        required: false
+      sortBy:
+        description: Sort the search results according to creation timestamp property.
+        type: string
+        required: false
+        enum: [ "+creation", "-creation" ]
+    responses:
+      200:
+        description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.v1+json:
+            schema: package
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          + search.packages.request.invalid.combination.queryParamaters - Multiple {queryParameter} are not allowed.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is: [postResponse]
+    description: Creates a new service package with a default service. [Since:1.0][Entitlement:service-create-package]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.package.v1+json:
+        schema: package
+    responses:
+      201:
+        description: The package was successfully created
+        body:
+          application/vnd.com.covisint.platform.package.v1+json:
+            schema: package
+
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request
+          + framework:request:io
+          + framework:request:io:read - Invalid input. There was an error while parsing.
+          + framework:request:io:read:parsing
+          + framework:request:io:write
+          + framework:request:header:missing - Missing request header: {headerName}
+          + framework:request:param:missing - Missing request parameter: {queryParameterName}
+          + framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+          + framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + framework:resource:missing - The following resources were not found: {resources}
+          + add.service.package.invalid.terms.conditions.type - Invalid type. Valid values are PERSON, ORGANIZATION
+          + add.service.package.invalid.code.restriction.type - Invalid type. Valid values are PERSON, ORGANIZATION
+          + add.service.package.invalid.code.restriction - Invalid restriction. Valid values are SITE, LOCATION
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  /count:
+    is: []
+    description: Count endpoint for packages [Since:2.0]
+    get:
+       is: []
+       description: Returns the count of packagess.[Entitlement:service-count-package]
+       headers:
+         Accept:
+           description: Used to request the appropriate package resource media type.
+           example: application/json
+           type: string
+           required: true
+       queryParameters:
+        id:
+          description: Filter the search results by the given id. Multiple parameters are supported and the search results will be a union.
+          type: string
+          required: false
+        name:
+          description: Retrieve only packages with the specified name.  The search is case-insensitive and looks at all available languages.  Multiple parameters are supported and the search results will be a union.
+          type: string
+          required: false
+        description:
+          description: Retrieve only packages with the specified description.  The search is case-insensitive and looks at all available languages.  Multiple parameters are supported and the search results will be a union.
+          type: string
+          required: false
+        category:
+          description: Retrieve only packages assigned to the given category.  The search is case-insensitve.  Multiple parameters are supported and the search results will be a union.
+          type: string
+          required: false
+        owningOrganization.id:
+          description: Return all packages owned by the given organization id.  Multiple parameters are supported, which will return packages that are owned by any of the given organizations.
+          type: string
+          required: false
+        parentPackage.id:
+          description: Return all children packages of the given parent package.  Multiple parameters are supported, which will return child packages of all given parent packages.
+          type: string
+          required: false
+        grantable:
+          description: Return all packages that are flagged as grantable.
+          type: boolean
+          required: false
+        requestable:
+          description: Return all packages that are flagged as requestable.
+          type: boolean
+          required: false
+       responses:
+         200:
+           description: The total number of packages successfully retrieved (response collection may be empty).
+           body:
+             application/text:
+         400:
+           description: |
+             There was a problem with the client's request
+             ___
+             Substatus codes are mentioned below:
+             + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+             + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+           body:
+             application/vnd.com.covisint.error.v1+json:
+               schema: errorResponseSchema
+  /{packageId}:
+    description: individual resource endpoint for packages.
+    uriParameters:
+      packageId:
+        description: Unique identifier of the package
+        type: string
+        required: true
+    is: [secured]
+
+    get:
+      is: [unsecured,getResponse]
+      description: Returns the package by its id. [Since:1.0][Flow-name:service-get-package]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.v1+json:
+              schema: package
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    /persons/tacs:
+      is: [secured]
+      description: collection endpoint for package's terms and condition resources pertinent to person.
+      get:
+        is: [getResponse]
+        description: Performs a search for package's terms and condition resources pertinent to person.[Since:3.1][Entitlement:service-search-terms-and-condition-person]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.terms.and.condition.v1+json
+            type: string
+            required: true
+        responses:
+          200:
+            description: The package's terms and condition pertinent to person returns successfully.
+            body:
+              application/vnd.com.covisint.platform.package.terms.and.condition.v1+json:
+                schema: termsAndCondition
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /languages/{languageId}:
+        description: individual resource endpoint for package's terms and condition pertinent to person by language.
+        uriParameters:
+          languageId:
+            description: The language of the package's terms and condition pertinent to person.
+            type: string
+            required: true
+        is: [secured]
+        get:
+          is: [getResponse]
+          description: Performs a search for package's terms and condition resources pertinent to person by language.[Since:3.1][Entitlement:service-search-terms-and-condition-person-by-language]
+          headers:
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.package.terms.and.condition.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The package's terms and condition pertinent to person by language returns successfully.
+              body:
+                application/vnd.com.covisint.platform.package.terms.and.condition.v1+json:
+                  schema: termsAndCondition
+            400:
+              description: |
+                There was a problem with the client's request
+                ___
+                Substatus codes are mentioned below:
+                + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+    /organizations/tacs:
+      is: [secured]
+      description: collection endpoint for package's terms and condition resources pertinent to organization.
+      get:
+        is: [getResponse]
+        description: Performs a search for package's terms and condition resources pertinent to organization.[Since:3.1][Entitlement:service-search-terms-and-condition-organization]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.package.terms.and.condition.v1+json
+            type: string
+            required: true
+        responses:
+          200:
+            description: The package's terms and condition pertinent to organization returns successfully.
+            body:
+              application/vnd.com.covisint.platform.package.terms.and.condition.v1+json:
+                schema: termsAndCondition
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /languages/{languageId}:
+        description: individual resource endpoint for package's terms and condition pertinent to organization by language.
+        uriParameters:
+          languageId:
+            description: The language of the package's terms and condition pertinent to organization.
+            type: string
+            required: true
+        is: [secured]
+        get:
+          is: [getResponse]
+          description: Performs a search for package's terms and condition resources pertinent to organization by language.[Since:3.1][Entitlement:service-search-terms-and-condition-organization-by-language]
+          headers:
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.package.terms.and.condition.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The package's terms and condition pertinent to organization by language returns successfully.
+              body:
+                application/vnd.com.covisint.platform.package.terms.and.condition.v1+json:
+                  schema: termsAndCondition
+            400:
+              description: |
+                There was a problem with the client's request
+                ___
+                Substatus codes are mentioned below:
+                + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+
+    /services:
+      description: collection endpoints for the services that are members of this package.
+      is: [secured]
+
+      get:
+        is: [getResponse]
+        description: get the services that are members of this package.[Since:1.0][Entitlement:service-search-package-services]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.v1+json
+            type: string
+            required: true
+        responses:
+          200:
+            description: the member services were successfully retrieved.
+            body:
+              application/vnd.com.covisint.platform.service.v1+json:
+                schema: service
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /{serviceId}:
+        uriParameters:
+          serviceId:
+            description: Unique identifier of the associated service.
+            type: string
+            required: true
+        is: [secured]
+        description: individual resource endpoint for service package association.[Since:3.1][Entitlement:services-get-by-serviceId]
+        get:
+          is: [getResponse]
+          description: Returns the service associated with the package. [Since:3.0][Entitlement:service-search-package-service]
+          headers:
+            Accept:
+              description: Media type.
+              example: application/vnd.com.covisint.platform.service.v1+json
+              type: string
+              required: true
+          responses:
+            200:
+              description: The service was successfully retrieved
+              body:
+                application/vnd.com.covisint.platform.service.v1+json:
+                  schema: service
+            400:
+              description: |
+                There was a problem with the client's request
+                ___
+                Substatus codes are mentioned below:
+                + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+                + service.package.missing.association - The service is not associated to the package
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+
+  /tasks/assignServiceMembership:
+    is: [secured]
+    description: Assign services to a package [Since:1.0] [Entitlement:service-assign-service-membership]
+    post:
+      is: [postResponse]
+      description: Assigns the given services as members of the package.[Since:1.0][Entitlement:service-assign-package-service]
+      headers:
+      queryParameters:
+        packageId:
+          description: The package to add the services to.
+          type: string
+          maxLength: 100
+          required: true
+        serviceId:
+          description: The services to be added to the package. Multiple parameters are supported.
+          type: string
+          maxLength: 15
+          required: true
+      responses:
+        204:
+          description: The services were successfully added to the package.
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + framework:request:param:missing - Missing request parameter: {queryParameterName}
+            + service.package.membership.multiple.packageId.not.allowed - Multiple packageIds are not allowed.
+            + service.membership.invalid - The following services are already members of another package: {serviceIds}
+            + framework:resource:missing - The following resources were not found: {resources}
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+  /tasks/removeServiceMembership:
+    is: [secured]
+    description: Remove services from a package [Since:1.0] [Entitlement:service-assign-service-membership]
+    post:
+      is: [postResponse]
+      description: Removes the given services from the package.[Since:1.0][Entitlement:service-delete-package-service]
+      headers:
+      queryParameters:
+        packageId:
+          description: The package to remove the services from.
+          type: string
+          required: true
+        serviceId:
+          description: The services to be removed from the package. Multiple parameters are supported.
+          type: string
+          required: true
+      responses:
+        204:
+          description: The service(s) was successfully removed from the package.
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + framework:request:param:missing - Missing request parameter: {queryParameterName}
+            + service.package.membership.multiple.packageId.not.allowed - Multiple packageIds are not allowed.
+            + framework:resource:missing - The following resources were not found: {resources}
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+/persons/{personId}/packages:
+  is: [secured]
+  description: collection endpoint for user package grant resources
+  uriParameters:
+    personId:
+      description: The id of the person for whom this grant is being made.
+      type: string
+      required: true
+  get:
+    is: [getResponse,pagableRequest]
+    description: Performs a search for a person's package grants. [Since:1.0][Entitlement:service-search-person-packages]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+        type: string
+        required: true
+    responses:
+      200:
+        description: All package grants that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+            schema: packageGrant
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+  /history:
+    description: Endpoint used to retrieve the user's package grant history .
+    is: [secured]
+    get:
+      is: [getResponse]
+      description: Endpoint used to retrieve the user's package grant history  [Since:3.2.0][Entitlement:service-get-person-package-grant-history]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json.
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package grant history was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json:
+              schema: packageGrantHistory
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:io:write
+            + framework:request:header:missing - Missing request header: {headerName}
+            + framework:request:param:missing - Missing request parameter: {queryParameterName}
+            + framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            + framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+            + framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+  /{packageId}:
+    uriParameters:
+      packageId:
+        description: Unique identifier of the granted package.
+        type: string
+        required: true
+    is: [secured]
+    description: individual resource endpoint for package grants
+
+    get:
+      is: [getResponse]
+      description: Returns the package grant [Since:1.0][Entitlement:service-get-person-package]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package grant was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+              schema: packageGrant
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + service.package.grant.person.invalid - The person service package grant does not exist
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    put:
+      is: [putResponse]
+      description: Grant (push) a package to a person. [Since:1.0][Entitlement:service-update-person-package]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.package.grant.v1+json:
+          schema: packageGrant
+      responses:
+        200:
+          description: The package grant was successfully created
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json:
+              schema: packageGrant
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + service.package.not.grantable - This package is not grantable.
+            + service.package.grant.invalid.grantee.status - Service package cannot be granted to grantee in UNACTIVATED status
+            + update.service.package.grant.invalid.status - Invalid status. Valid values are ACTIVE, SUSPENDED, UNACTIVATED
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+    delete:
+      is: [deleteResponse]
+      description: Revoke a package grant from a person. [Since:3.1][Entitlement:delete-package-grant]
+      headers:
+      responses:
+        204:
+          description: The package grant was successfully revoked
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+/organizations/{organizationId}/packages:
+  is: [unsecured]
+  description: collection endpoint for organization package grant resources
+  uriParameters:
+    organizationId:
+      description: The id of the organization for whom this grant is being made.
+      type: string
+      required: true
+  get:
+    is: [unsecured,getResponse,pagableRequest]
+    description: Performs a search for an organization's package grants. [Since:1.0][Flow-name:service-search-organization-packages]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+        type: string
+        required: true
+    responses:
+      200:
+        description: All package grants that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+            schema: packageGrant
+      400:
+        description: |
+          ___
+          There was a problem with the client's request
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+  /{packageId}:
+    uriParameters:
+      packageId:
+        description: Unique identifier of the granted package.
+        type: string
+        required: true
+    is: [secured]
+    description: individual resource endpoint for package grants
+
+    get:
+      is: [getResponse]
+      description: Returns the package grant [Since:1.0][Entitlement:service-get-organization-package]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes.
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package grant was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json;includeCodes:
+              schema: packageGrant
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + service.package.grant.organization.invalid - The organization service package grant does not exist
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    put:
+      is: [putResponse]
+      description: Grant (push) a package to an organization. [Since:1.0][Entitlement:service-update-organization-package]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.grant.v1+json
+          type: string
+          required: true
+      body:
+        application/vnd.com.covisint.platform.package.grant.v1+json:
+          schema: packageGrant
+      responses:
+        200:
+          description: The package grant was successfully created
+          body:
+            application/vnd.com.covisint.platform.package.grant.v1+json:
+              schema: packageGrant
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + service.package.not.grantable - This package is not grantable.
+            + update.service.package.grant.invalid.status - Invalid status. Valid values are ACTIVE, SUSPENDED, UNACTIVATED
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+        409:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:resource:conflict:grantee:type - Invalid grantee type. Expected {granteeType}
+            + framework:resource:conflict:grantee:id - Invalid grantee id. Expected {granteeId}
+            + framework:resource:conflict:servicePackage:id - Invalid service package id. Expected {servicePackageId}
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    delete:
+      is: [deleteResponse]
+      description: Revoke a package grant from an organization. [Since:3.1][Entitlement:delete-organization-package-grant]
+      headers:
+      responses:
+        204:
+          description: The package grant was successfully revoked
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+/grants/tasks/person/package/suspend:
+  is: [secured]
+  description: used to suspend an existing service package grant for user. If the grant is already suspended, It will throw exception. [Since:3.2.0]
+  post:
+    is: [postResponse]
+    description: Suspends a service package grant for user.[Entitlement:suspended-user-package-grant]
+    headers:
+        Accept:
+          description: The media type.
+          example: application/vnd.com.covisint.platform.package.grant.status.request.v1+json
+          type: string
+          required: true
+    body:
+      application/vnd.com.covisint.platform.package.grant.status.request.v1+json:
+        schema: grantStatusChangeRequest
+    responses:
+      204:
+        description: The user service package grant was successfully suspended
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:header:missing - Missing request header: {headerName}
+          + framework:request:param:missing - Missing request parameter: {queryParameterName}
+          + service.package.grant.not.exists - The grant of the service package %s for the person %s doesnt exists.
+          + service.package.grant.not.suspended - The grant of the service package %s for the person %s is not active..
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+/grants/tasks/person/package/unsuspend:
+  is: [secured]
+  description: used to unsuspend an existing service package grant for user. If the grant is already unsuspended, It will throw exception. [Since:3.2.0]
+  post:
+    is: [postResponse]
+    description: Unsuspends a service package grant for user.[Entitlement:unsuspended-user-package-grant]
+    headers:
+        Accept:
+          description: The media type.
+          example: application/vnd.com.covisint.platform.package.grant.status.request.v1+json
+          type: string
+          required: true
+    body:
+      application/vnd.com.covisint.platform.package.grant.status.request.v1+json:
+        schema: grantStatusChangeRequest
+    responses:
+      204:
+        description: The user service package grant was successfully unsuspended
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:header:missing - Missing request header: {headerName}
+          + framework:request:param:missing - Missing request parameter: {queryParameterName}
+          + service.package.grant.not.exists - The grant of the service package for the person doesnt exists.
+          + service.package.grant.not.suspended - The grant of the service package for the person is not suspended..
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+/grants/tasks/organization/package/suspend:
+  is: [secured]
+  description: used to suspend an existing service package grant for organization. If the grant is already suspended, It will throw exception. [Since:3.2.0]
+  post:
+    is: [postResponse]
+    description: Suspends a service package grant for organization.[Entitlement:suspended-organizaton-package-grant]
+    headers:
+        Accept:
+          description: The media type.
+          example: application/vnd.com.covisint.platform.package.grant.status.request.v1+json
+          type: string
+          required: true
+    body:
+      application/vnd.com.covisint.platform.package.grant.status.request.v1+json:
+        schema: grantStatusChangeRequest
+    responses:
+      204:
+        description: The organiaztion service package grant was successfully suspended
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:header:missing - Missing request header: {headerName}
+          + framework:request:param:missing - Missing request parameter: {queryParameterName}
+          + service.package.grant.not.exists - The grant of the service package %s for the person %s doesnt exists.
+          + service.package.grant.not.suspended - The grant of the service package %s for the person %s is not active..
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+/grants/tasks/organization/package/unsuspend:
+  is: [secured]
+  description: used to unsuspend an existing service package grant for organization. If the grant is already unsuspended, It will throw exception. [Since:3.2.0]
+  post:
+    is: [postResponse]
+    description: Unsuspends a service package grant for organization.[Entitlement:unsuspended-organization-package-grant]
+    headers:
+        Accept:
+          description: The media type.
+          example: application/vnd.com.covisint.platform.package.grant.status.request.v1+json
+          type: string
+          required: true
+    body:
+      application/vnd.com.covisint.platform.package.grant.status.request.v1+json:
+        schema: grantStatusChangeRequest
+    responses:
+      204:
+        description: The organization service package grant was successfully unsuspended
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:header:missing - Missing request header: {headerName}
+          + framework:request:param:missing - Missing request parameter: {queryParameterName}
+          + service.package.grant.not.exists - The grant of the service package for the person doesnt exists.
+          + service.package.grant.not.suspended - The grant of the service package for the person is not suspended..
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+
+/requests:
+  is: [secured]
+  description: collection endpoint for package request resources
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Performs a search for package requests. [Since:1.0][Entitlement:service-search-requests]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
+        type: string
+        required: true
+    queryParameters:
+      requestor.id:
+        description: The subject requesting the package. Mandatory if requestor.type query parameter is provided.
+        type: string
+        required: false
+      requestor.type:
+        description: The type of subject requesting the package. Mandatory if requestor.id query parameter is provided.
+        type: string
+        enum: [ "person", "organization" ]
+        required: false
+    responses:
+      200:
+        description: All package requests that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.request.v1+json:
+            schema: packageRequest
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+  post:
+    is: [postResponse]
+    description: Creates a new request for a package. [Since:1.0][Entitlement:service-create-request]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.request.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.package.request.v1+json:
+        schema: packageRequest
+    responses:
+      201:
+        description: The package request was successfully created
+        body:
+          application/vnd.com.covisint.platform.package.request.v1+json:
+            schema: packageRequest
+
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request
+          + framework:request:io
+          + framework:request:io:read - Invalid input. There was an error while parsing.
+          + framework:request:io:read:parsing
+          + framework:request:io:write
+          + framework:request:header:missing - Missing request header: {headerName}
+          + framework:request:param:missing - Missing request parameter: {queryParameterName}
+          + framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+          + framework:request:data:invalid - The following information should not be part of the resource: {resourceFieldName}
+          + service.package.not.found - The requested service package does not exist.
+          + service.package.request.invalid.requestor.status - Service package cannot be requested by a requestor in UNACTIVATED status
+          + service.package.not.requestable - The requested service package was marked as non-requestable.
+          + service.package.request.parent.id.not.found - The parent request id was not found.
+          + requestor.type.invalid - Only person requestors are supported
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + service.package.request.invalid.requestor.type - Unsupported requestor type {requestorType}
+          + framework:resource:missing - The following resources were not found: {resources}
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+  /{id}:
+    uriParameters:
+      id:
+        description: Unique identifier of the package request
+        type: string
+        required: true
+    is: [secured]
+    description: individual resource endpoint for package requests
+
+    get:
+      is: [getResponse]
+      description: Returns the package request [Since:1.0][Entitlement:service-get-request]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.package.request.v1+json
+          type: string
+          required: true
+      responses:
+        200:
+          description: The package request was successfully retrieved
+          body:
+            application/vnd.com.covisint.platform.package.request.v1+json:
+              schema: packageRequest
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    delete:
+      is: [deleteResponse]
+      description: Deletes (cancels) an existing package request. [Since:1.0][Entitlement:service-delete-request]
+      headers:
+      body:
+        application/vnd.com.covisint.platform.package.request.v1+json:
+          schema: packageRequest
+      responses:
+        204:
+          description: The package request was successfully deleted
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+  /count:
+    is: []
+    description: Count endpoint for package requests [Since:3.1]
+    get:
+       is: []
+       description: Returns the count of packagess.[Entitlement:service-count-request]
+       headers:
+         Accept:
+           description: Used to request the appropriate package resource media type.
+           example: application/json
+           type: string
+           required: true
+       queryParameters:
+         requestor.id:
+           description: The subject requesting the package. Mandatory if requestor.type query parameter is provided.
+           type: string
+           required: false
+         requestor.type:
+           description: The type of subject requesting the package. Mandatory if requestor.id query parameter is provided.
+           type: string
+           enum: [ "person", "organization" ]
+           required: false
+       responses:
+         200:
+           description: The total number of packages successfully retrieved (response collection may be empty).
+           body:
+             application/text:
+         400:
+           description: |
+             There was a problem with the client's request
+             ___
+             Substatus codes are mentioned below:
+             + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+             + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+           body:
+             application/vnd.com.covisint.error.v1+json:
+               schema: errorResponseSchema
+  /tasks/approve:
+    is: [secured]
+    description: endpoint used to approve package requests for person requestors. [Since:1.0]
+    post:
+      is: [postResponse]
+      description: Approve a package request. [Entitlement:service-task-approve-request]
+      headers:
+      queryParameters:
+        requestId:
+          description: the request id.
+          type: string
+          required: true
+        justification:
+          description: optional justification for the decision.
+          type: string
+          maxLength: 1000
+          required: false
+      responses:
+        204:
+          description: The approval decision was accepted and will be processed accordingly.  No response entity body.
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:header:missing - Missing request header: {headerName}
+            + service.request.id.not.found- The service request does not exist
+            + service.request.unsupported.requestor.type - Service package requests for persons are supported.  Other requestor types (organizations) are not supported.
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + service.package.request.already.processed - The request has already been processed.
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+  /tasks/deny:
+    is: [secured]
+    description: endpoint used to reject package requests for person requestors. [Since:1.0]
+    post:
+      is: [postResponse]
+      description: Deny a package request. [Entitlement:service-task-deny-request]
+      headers:
+      queryParameters:
+        requestId:
+          description: the request id.
+          type: string
+          required: true
+        justification:
+          description: optional justification for the denial.
+          type: string
+          maxLength: 1000
+          required: false
+      responses:
+        204:
+          description: The denial decision was accepted and will be processed.  No response entity body.
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:header:missing - Missing request header: {headerName}
+            + service.request.id.not.found- The service request does not exist.
+            + service.request.unsupported.requestor.type - Service package requests for persons are supported.  Other requestor types (organizations) are not supported.
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + service.package.request.already.processed - The request has already been processed.
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+
+/grants:
+  is: [secured]
+  description: Search endpoint for package grants. [Since:1.0]
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Performs a search for all grants of the specified package id. [Since:1.0][Entitlement:service-search-grants]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.v1+json
+        type: string
+        required: true
+    queryParameters:
+      grantedPackageId:
+        description: the id of the granted package which is being searched.
+        type: string
+        required: true
+      granteeType:
+        description: The type of grantee to be filtered.  Omit this parameter to retrieve grants for all grantees.
+        required: false
+        enum: ["person", "organization"]
+    responses:
+      200:
+        description: All package grants that satisfy the search criteria were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.grant.v1+json:
+            schema: packageGrant
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+/packages/grants/claims:
+  is: [secured]
+  description: Endpoint for assigning claims to user package grants. [Since:3.0]
+  put:
+    is: [putResponse]
+    description: Assigns a claim to the person package grant. [Since:3.0][Entitlement:service-update-grant-claim]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.claim.v1+json
+        type: string
+        required: true
+    body:
+      application/vnd.com.covisint.platform.package.grant.claim.v1+json:
+        schema: packageGrantClaimRequest
+    responses:
+      200:
+        description: The package claims was successfully assigned to user package grants.
+        body:
+          application/vnd.com.covisint.platform.package.grant.claim.v1+json:
+            schema: packageGrantClaimResponse
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+            + framework:request:data:missing - The following information was missing from the resource: {resourceFieldName(s)}
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + framework:resource:data:illegal - The following information was illegal from the resource:  {fieldSpecificError(s)}
+            + grantee.type.invalid - Only persons are allowed to grant package claims
+            + service.package.grant.invalid.claim.id - The claim id is not associated with the package id
+            + service.package.grant.invalid.claim.value.id - The claim value id is not associated with the claim id
+            + service.package.grant.invalid.grantee.id - The grantee id is invalid
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+/persons/{grantee}/claims:
+  is: [secured]
+  description: Search endpoint for package grant claims based on grantee. [Since:3.0]
+  uriParameters:
+    grantee:
+      description: The id of the person for whom this grant claim is being made.
+      type: string
+      required: true
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Search endpoint for package grant claims based on grantee. [Since:3.0][Entitlement:service-get-grantee-claims]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.claim.v1+json
+        type: string
+        required: true
+    responses:
+      200:
+        description: Package grant claims for a grantee will be returned (response collection may be empty).
+        body:
+         application/vnd.com.covisint.platform.package.grant.claim.v1+json:
+            schema: packageGrantClaimResponse
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + service.package.grant.claim.not.exists - The service package grant claim does not exist for the grantee.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+/persons/{grantee}/packages/{packageId}/claims:
+  is: [secured]
+  description: Search endpoint for package grant claims based on grantee and package id. [Since:3.0]
+  uriParameters:
+    grantee:
+      description: The id of the person for which the grant claim is requested for.
+      type: string
+      required: true
+    packageId:
+      description: The id of the package for which the grant claim is requested for.
+      type: string
+      required: true
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Search endpoint for package grant claims based on grantee. [Since:3.0][Entitlement:service-get-grant-claim]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.grant.claim.v1+json
+        type: string
+        required: true
+    responses:
+      200:
+        description: Package grant claim for a grantee will be returned.
+        body:
+          application/vnd.com.covisint.platform.package.grant.claim.v1+json:
+            schema: packageGrantClaimResponse
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + service.package.grant.claim.not.exists - The service package grant claim does not exist for the grantee and package id.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+/packages/persons/{personId}/requestable:
+  uriParameters:
+    personId:
+      description: The id of the person for whom this request is being made.
+      type: string
+      required: true
+  is: [secured]
+  description: Retrieve packages that are not granted to me and that are requestable.[Since:1.0]
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Retrieve packages that are not granted to me and that are requestable.[Entitlement:service-get-persons-requestable-packages]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+    responses:
+      200:
+        description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.v1+json:
+            schema: package
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          + search.packages.request.invalid.combination.queryParamaters - Multiple {queryParameter} are not allowed.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+
+/packages/organizations/{organizationId}/requestable:
+  uriParameters:
+    organizationId:
+      description: The id of the organization for whom this request is being made.
+      type: string
+      required: true
+  is: [secured]
+  description: Retrieve packages that are not granted to my organization and that are requestable.[Since:1.0]
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Retrieve packages that are not granted to my organization and that are requestable.[Entitlement:service-get-organization-requestable-packages]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.v1+json
+        type: string
+        required: true
+    responses:
+      200:
+        description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.v1+json:
+            schema: package
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;organization, application&#93;
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          + search.packages.request.invalid.combination.queryParamaters - Multiple {queryParameter} are not allowed.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
+/claims:
+  is: [secured]
+  description: Retrieve package claims that are coming under given packageId. If package Id is not given, method will return all package claims and values coming under realm.[Since:3.0]
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Retrieve package claims that are coming under given packageId. If package Id is not given, method will return all package claims and values coming under realm.[Entitlement:service-get-claims]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.package.claim.v1+json
+        type: string
+        required: true
+    queryParameters:
+      packageId:
+        description: Filter the search results by the given  packageId.
+        type: string
+        required: false
+    responses:
+      200:
+        description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.package.claim.v1+json:
+            schema: packageClaim
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;organization, application&#93;
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          + search.packages.request.invalid.combination.queryParamaters - Multiple {queryParameter} are not allowed.
+        body:
+          application/vnd.com.covisint.error.v1+json:
+           schema: errorResponseSchema
+/applications:
+  /persons/{personId}:
+    uriParameters:
+      personId:
+        description: The id of the person for whom this request is being made.
+        type: string
+        required: true
+    is: [secured]
+    description: individual resource endpoint for application resources for a person.
+    get:
+      is: [getSearchResponse,pagableRequest,getResponse]
+      description: Retrieve applications that are granted to the person.[Entitlement:service-get-person-granted-applications][Since:3.2.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.service.application.v1+json
+          type: string
+          required: true
+      queryParameters:
+        service.id:
+          description: Filter the search results by the given id.
+          type: string
+          required: false
+        service.category:
+          description: Filter the search results by the given category.
+          type: string
+          required: false
+        service.name:
+          description: Filter the search results by the given name.
+          type: string
+          required: false
+        servicePackage.id:
+          description: Filter the search results by the given service packageId.
+          type: string
+          required: false
+        servicePackage.parentPackage.id:
+          description: Filter the search results by the given parent packageId.
+          type: string
+          required: false
+        grant.status:
+          description: Filter the search results by the given grant status.
+          type: string
+          required: false
+        sortBy:
+          description: Sort the search results.
+          type: string
+          required: false
+          enum: [ "+service.name", "-service.name", "+service.creation", "-service.creation", "+grant.instant", "-grant.instant" ]
+      responses:
+        200:
+          description: All applications that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.service.application.v1+json:
+              schema: application
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    /count:
+      is: [secured]
+      description: Count applications that are granted to person.[Since:3.2.0]
+      get:
+        is: [getSearchResponse,getResponse]
+        description: Count applications that are granted to person.[Entitlement:service-count-person-granted-applications]
+        headers:
+          Accept:
+            description: Media type.
+            example: text/plain
+            type: string
+            required: true
+        queryParameters:
+          service.id:
+            description: Filter the search results by the given id.
+            type: string
+            required: false
+          service.category:
+            description: Filter the search results by the given category.
+            type: string
+            required: false
+          service.name:
+            description: Filter the search results by the given name.
+            type: string
+            required: false
+          servicePackage.id:
+            description: Filter the search results by the given service packageId.
+            type: string
+            required: false
+          servicePackage.parentPackage.id:
+            description: Filter the search results by the given parent packageId.
+            type: string
+            required: false
+          grant.status:
+            description: Filter the search results by the given grant status.
+            type: string
+            required: false
+        responses:
+          200:
+            description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+            body:
+              text/plain:
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+    /requestable:
+      is: [secured]
+      description: Retrieve applications that are not granted to the person and that are requestable.[Since:3.2.0]
+      get:
+        is: [getSearchResponse,pagableRequest,getResponse]
+        description: Retrieve packages that are not granted to the person and that are requestable.[Entitlement:service-get-person-requestable-applications]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.application.v1+json
+            type: string
+            required: true
+        queryParameters:
+          service.id:
+            description: Filter the search results by the given id.
+            type: string
+            required: false
+          service.category:
+            description: Filter the search results by the given category.
+            type: string
+            required: false
+          service.name:
+            description: Filter the search results by the given name.
+            type: string
+            required: false
+          servicePackage.id:
+            description: Filter the search results by the given service packageId.
+            type: string
+            required: false
+          servicePackage.parentPackage.id:
+            description: Filter the search results by the given parent packageId.
+            type: string
+            required: false
+          sortBy:
+            description: Sort the search results.
+            type: string
+            required: false
+            enum: [ "+service.name", "-service.name", "+service.creation", "-service.creation"]
+        responses:
+          200:
+            description: All applications that satisfy the query parameters were successfully retrieved (response collection may be empty).
+            body:
+              application/vnd.com.covisint.platform.service.application.v1+json:
+                schema: application
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /count:
+        is: [secured]
+        description: Count applications that are not granted to the person and that are requestable.[Since:3.2.0]
+        get:
+          is: [getSearchResponse,getResponse]
+          description: Count the applications that are not granted to the person and that are requestable.[Entitlement:service-count-person-requestable-applications]
+          headers:
+            Accept:
+              description: Media type.
+              example: text/plain
+              type: string
+              required: true
+          queryParameters:
+            service.id:
+              description: Filter the search results by the given id.
+              type: string
+              required: false
+            service.category:
+              description: Filter the search results by the given category.
+              type: string
+              required: false
+            service.name:
+              description: Filter the search results by the given name.
+              type: string
+              required: false
+            servicePackage.id:
+              description: Filter the search results by the given service packageId.
+              type: string
+              required: false
+            servicePackage.parentPackage.id:
+              description: Filter the search results by the given parent packageId.
+              type: string
+              required: false
+          responses:
+            200:
+              description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+              body:
+                text/plain:
+            400:
+              description: |
+                There was a problem with the client's request
+                ___
+                Substatus codes are mentioned below:
+                + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+                + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+    /grantable:
+      is: [secured]
+      description: Retrieve application that are not granted to the person and that are grantable.[Since:3.1]
+      get:
+        is: [getSearchResponse,pagableRequest,getResponse]
+        description: Retrieve packages that are not granted to the person and that are grantable.[Entitlement:service-get-person-grantable-applications]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.application.v1+json
+            type: string
+            required: true
+        queryParameters:
+          service.id:
+            description: Filter the search results by the given id.
+            type: string
+            required: false
+          service.category:
+            description: Filter the search results by the given category.
+            type: string
+            required: false
+          service.name:
+            description: Filter the search results by the given name.
+            type: string
+            required: false
+          servicePackage.id:
+            description: Filter the search results by the given service packageId.
+            type: string
+            required: false
+          servicePackage.parentPackage.id:
+            description: Filter the search results by the given parent packageId.
+            type: string
+            required: false
+          sortBy:
+            description: Sort the search results.
+            type: string
+            required: false
+            enum: [ "+service.name", "-service.name", "+service.creation", "-service.creation"]
+        responses:
+          200:
+            description: All applications that satisfy the query parameters were successfully retrieved (response collection may be empty).
+            body:
+              application/vnd.com.covisint.platform.service.application.v1+json:
+                schema: application
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /count:
+        is: [secured]
+        description: Count applications that are not granted to the person and that are grantable.[Since:3.1]
+        get:
+          is: [getSearchResponse,getResponse]
+          description: Count applications that are not granted to the person and that are grantable.[Entitlement:service-count-person-grantable-applications]
+          headers:
+            Accept:
+              description: Media type.
+              example: text/plain
+              type: string
+              required: true
+          queryParameters:
+            service.id:
+              description: Filter the search results by the given id.
+              type: string
+              required: false
+            service.category:
+              description: Filter the search results by the given category.
+              type: string
+              required: false
+            service.name:
+              description: Filter the search results by the given name.
+              type: string
+              required: false
+            servicePackage.id:
+              description: Filter the search results by the given service packageId.
+              type: string
+              required: false
+            servicePackage.parentPackage.id:
+              description: Filter the search results by the given parent packageId.
+              type: string
+              required: false
+          responses:
+            200:
+              description: All applications that satisfy the query parameters were successfully retrieved (response collection may be empty).
+              body:
+                text/plain:
+            400:
+              description: |
+                There was a problem with the client's request
+                ___
+                Substatus codes are mentioned below:
+                + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+                + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+  /organizations/{organizationId}:
+    uriParameters:
+      organizationId:
+        description: The id of the organization for whom this request is being made.
+        type: string
+        required: true
+    is: [secured]
+    description: individual resource endpoint for application resources for an organization.
+    get:
+      is: [getSearchResponse,pagableRequest,getResponse]
+      description: Retrieve applications that are granted to the organization.[Entitlement:service-get-organization-granted-applications][Since:3.2.0]
+      headers:
+        Accept:
+          description: Media type.
+          example: application/vnd.com.covisint.platform.service.application.v1+json
+          type: string
+          required: true
+      queryParameters:
+        service.id:
+          description: Filter the search results by the given id.
+          type: string
+          required: false
+        service.category:
+          description: Filter the search results by the given category.
+          type: string
+          required: false
+        service.name:
+          description: Filter the search results by the given name.
+          type: string
+          required: false
+        servicePackage.id:
+          description: Filter the search results by the given service packageId.
+          type: string
+          required: false
+        servicePackage.parentPackage.id:
+          description: Filter the search results by the given parent packageId.
+          type: string
+          required: false
+        grant.status:
+          description: Filter the search results by the given grant status.
+          type: string
+          required: false
+        sortBy:
+          description: Sort the search results.
+          type: string
+          required: false
+          enum: [ "+service.name", "-service.name", "+service.creation", "-service.creation", "+grant.instant", "-grant.instant" ]
+      responses:
+        200:
+          description: All applications that satisfy the query parameters were successfully retrieved (response collection may be empty).
+          body:
+            application/vnd.com.covisint.platform.service.application.v1+json:
+              schema: application
+        400:
+          description: |
+            There was a problem with the client's request
+            ___
+            Substatus codes are mentioned below:
+            + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+            + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          body:
+            application/vnd.com.covisint.error.v1+json:
+              schema: errorResponseSchema
+    /count:
+      is: [secured]
+      description: Count applications that are granted to organization.[Since:3.2.0]
+      get:
+        is: [getSearchResponse,getResponse]
+        description: Count applications that are granted to the organization.[Entitlement:service-count-organization-granted-applications]
+        headers:
+          Accept:
+            description: Media type.
+            example: text/plain
+            type: string
+            required: true
+        queryParameters:
+          service.id:
+            description: Filter the search results by the given id.
+            type: string
+            required: false
+          service.category:
+            description: Filter the search results by the given category.
+            type: string
+            required: false
+          service.name:
+            description: Filter the search results by the given name.
+            type: string
+            required: false
+          servicePackage.id:
+            description: Filter the search results by the given service packageId.
+            type: string
+            required: false
+          servicePackage.parentPackage.id:
+            description: Filter the search results by the given parent packageId.
+            type: string
+            required: false
+          grant.status:
+            description: Filter the search results by the given grant status.
+            type: string
+            required: false
+        responses:
+          200:
+            description: All applications that satisfy the query parameters were successfully retrieved (response collection may be empty).
+            body:
+              text/plain:
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+    /requestable:
+      is: [secured]
+      description: Retrieve applications that are not granted to the organization and granted to the parent organization and that are requestable.
+      get:
+        is: [getSearchResponse,pagableRequest,getResponse]
+        description: Retrieve applications that are not granted to the organization and granted to the parent organization and that are requestable.[Entitlement:service-get-organization-requestable-applications][Since:3.2.0]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.application.v1+json
+            type: string
+            required: true
+        queryParameters:
+          service.id:
+            description: Filter the search results by the given id.
+            type: string
+            required: false
+          service.category:
+            description: Filter the search results by the given category.
+            type: string
+            required: false
+          service.name:
+            description: Filter the search results by the given name.
+            type: string
+            required: false
+          servicePackage.id:
+            description: Filter the search results by the given service packageId.
+            type: string
+            required: false
+          servicePackage.parentPackage.id:
+            description: Filter the search results by the given parent packageId.
+            type: string
+            required: false
+          sortBy:
+            description: Sort the search results.
+            type: string
+            required: false
+            enum: [ "+service.name", "-service.name", "+service.creation", "-service.creation"]
+        responses:
+          200:
+            description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+            body:
+              application/vnd.com.covisint.platform.service.application.v1+json:
+                schema: application
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /count:
+        is: [secured]
+        description: Retrieve applications that are not granted to the organization and granted to the parent organization and that are requestable.[Since:3.2.0]
+        get:
+          is: [getSearchResponse,getResponse]
+          description: Retrieve applications that are not granted to the organization and granted to the parent organization and that are requestable.[Entitlement:service-count-organization-requestable-applications]
+          headers:
+            Accept:
+              description: Media type.
+              example: text/plain
+              type: string
+              required: true
+          queryParameters:
+            service.id:
+              description: Filter the search results by the given id.
+              type: string
+              required: false
+            service.category:
+              description: Filter the search results by the given category.
+              type: string
+              required: false
+            service.name:
+              description: Filter the search results by the given name.
+              type: string
+              required: false
+            servicePackage.id:
+              description: Filter the search results by the given service packageId.
+              type: string
+              required: false
+            servicePackage.parentPackage.id:
+              description: Filter the search results by the given parent packageId.
+              type: string
+              required: false
+          responses:
+            200:
+              description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+              body:
+                text/plain:
+            400:
+              description: |
+                There was a problem with the client's request
+                ___
+                Substatus codes are mentioned below:
+                + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+                + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+    /grantable:
+      is: [secured]
+      description: Retrieve applications that are not granted to the organization and that are grantable.
+      get:
+        is: [getSearchResponse,pagableRequest,getResponse]
+        description: Retrieve applications that are not granted to the organization and that are grantable.[Entitlement:service-get-organization-grantable-applications][Since:3.2.0]
+        headers:
+          Accept:
+            description: Media type.
+            example: application/vnd.com.covisint.platform.service.application.v1+json
+            type: string
+            required: true
+        queryParameters:
+          service.id:
+            description: Filter the search results by the given id.
+            type: string
+            required: false
+          service.category:
+            description: Filter the search results by the given category.
+            type: string
+            required: false
+          service.name:
+            description: Filter the search results by the given name.
+            type: string
+            required: false
+          servicePackage.id:
+            description: Filter the search results by the given service packageId.
+            type: string
+            required: false
+          servicePackage.parentPackage.id:
+            description: Filter the search results by the given parent packageId.
+            type: string
+            required: false
+          sortBy:
+            description: Sort the search results.
+            type: string
+            required: false
+            enum: [ "+service.name", "-service.name", "+service.creation", "-service.creation"]
+        responses:
+          200:
+            description: All packages that satisfy the query parameters were successfully retrieved (response collection may be empty).
+            body:
+              application/vnd.com.covisint.platform.service.application.v1+json:
+                schema: application
+          400:
+            description: |
+              There was a problem with the client's request
+              ___
+              Substatus codes are mentioned below:
+              + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+              + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+            body:
+              application/vnd.com.covisint.error.v1+json:
+                schema: errorResponseSchema
+      /count:
+        is: [secured]
+        description: Count applications that are not granted to the organization that are grantable.[Since:3.2.0]
+        get:
+          is: [getSearchResponse,getResponse]
+          description: Count applications that are not granted to the organization and that are grantable.[Entitlement:service-count-organization-grantable-applications]
+          headers:
+            Accept:
+              description: Media type.
+              example: text/plain
+              type: string
+              required: true
+          queryParameters:
+            service.id:
+              description: Filter the search results by the given id.
+              type: string
+              required: false
+            service.category:
+              description: Filter the search results by the given category.
+              type: string
+              required: false
+            service.name:
+              description: Filter the search results by the given name.
+              type: string
+              required: false
+            servicePackage.id:
+              description: Filter the search results by the given service packageId.
+              type: string
+              required: false
+            servicePackage.parentPackage.id:
+              description: Filter the search results by the given parent packageId.
+              type: string
+              required: false
+          responses:
+            200:
+              description: All applications that satisfy the query parameters were successfully retrieved (response collection may be empty).
+              body:
+                text/plain:
+            400:
+              description: |
+                There was a problem with the client's request
+                ___
+                Substatus codes are mentioned below:
+                + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+                + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+              body:
+                application/vnd.com.covisint.error.v1+json:
+                  schema: errorResponseSchema
+/categories:
+  is: [secured]
+  description: collection endpoint for category resources.
+  get:
+    is: [getSearchResponse,pagableRequest]
+    description: Performs a search for category resources.[Since:3.1][Entitlement:service-search-categories]
+    headers:
+      Accept:
+        description: Media type.
+        example: application/vnd.com.covisint.platform.category.v1+json
+        type: string
+        required: true
+    responses:
+      200:
+        description: All categories that satisfy the query parameters were successfully retrieved (response collection may be empty).
+        body:
+          application/vnd.com.covisint.platform.category.v1+json:
+            schema: category
+      400:
+        description: |
+          There was a problem with the client's request
+          ___
+          Substatus codes are mentioned below:
+          + framework:request:param:invalid - The following parameter should not be part of the request: {queryParameterName}
+          + search.services.request.invalid.combination.queryParamaters - Multiple {queryParameter} are not allowed.
+          + framework:request:invalid:header:value - Invalid x-requestor header value. Valid values are &#91;person, application&#93;
+        body:
+          application/vnd.com.covisint.error.v1+json:
+            schema: errorResponseSchema
