@@ -2,11 +2,13 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+<!--
   <parent>
     <groupId>com.covisint.ast.microservices</groupId>
     <artifactId>covisint-ast-microservices</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
+-->
 
   <groupId>com.covisint.ast.microservices.plugins.maven</groupId>
   <artifactId>testRaml</artifactId>
@@ -18,6 +20,30 @@
   <url>http://maven.apache.org</url>
 
   <properties>
+    <astVersion>1.0-SNAPSHOT</astVersion>
+    <javaSourceVersion>1.8</javaSourceVersion>
+    <javaTargetVersion>1.8</javaTargetVersion>
+    <junitVersion>4.12</junitVersion>
+    <ramlParserVersion>0.8.14</ramlParserVersion>
+    <commonsCliVersion>1.3.1</commonsCliVersion>
+    <commonsIoVersion>2.5</commonsIoVersion>
+    <httpComponentsVersion>4.5.2</httpComponentsVersion>
+
+    <!-- check https://maven.apache.org/plugins/ for updates to the maven plugin versions -->
+    <mavenCompilerPluginVersion>3.5.1</mavenCompilerPluginVersion>
+    <mavenJavadocPluginVersion>2.10.4</mavenJavadocPluginVersion>
+
+    <!-- just general https://maven.apache.org search for these -->
+    <mavenVersion>3.3.9</mavenVersion>
+    <mavenPluginAnnotationsVersion>3.4</mavenPluginAnnotationsVersion>
+    <mavenPluginTestingHarnesssVersion>3.3.0</mavenPluginTestingHarnesssVersion>
+    <mavenPluginPluginVersion>3.4</mavenPluginPluginVersion>
+
+    <!-- check https://mvnrepository.com/artifact/org.zeroturnaround/jrebel-maven-plugin for versions -->
+    <javarebelMavenPluginVersion>1.1.6</javarebelMavenPluginVersion>
+
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
     <ramlSourceDir>${basedir}/src/main/raml</ramlSourceDir>
     <ramlTargetDir>${basedir}/target/raml</ramlTargetDir>
     <ramlVersion>2.0</ramlVersion>
