@@ -229,15 +229,11 @@
          "type" : "object",
          "description" : "A container for the subject's address elements.",
          "properties" : {
-           "type" : "object",
            "streets" : {
                "type" : "array",
                "description" : "An array of address streets (i.e. address line 1, 2, 3).",
                "minItems" : 0,
-               "items" : [{
-                 "type": "string",
-                 "maxLength" : 255
-               }]
+               "items" : { "type": "string", "maxLength" : 255 }
              },
              "city" : { "type" : "string", "maxLength" : 60, "description" : "The city name." },
              "state" : { "type" : "string", "maxLength" : 60, "description" : "The state/province name or code." },
