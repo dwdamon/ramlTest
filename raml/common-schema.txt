@@ -234,10 +234,10 @@
                "type" : "array",
                "description" : "An array of address streets (i.e. address line 1, 2, 3).",
                "minItems" : 0,
-               "items" : {
+               "items" : [{
                  "type": "string",
                  "maxLength" : 255
-               }
+               }]
              },
              "city" : { "type" : "string", "maxLength" : 60, "description" : "The city name." },
              "state" : { "type" : "string", "maxLength" : 60, "description" : "The state/province name or code." },
